@@ -1,0 +1,16 @@
+setup.py
+music_collection/__init__.py
+music_collection/models/__init__.py
+music_collection/utils/__init__.py
+music_collection/utils/logger.py
+music_collection/utils/random_utils.py
+music_collection/utils/sql_utils.py
+stock_trading/__init__.py
+stock_trading.egg-info/PKG-INFO
+stock_trading.egg-info/SOURCES.txt
+stock_trading.egg-info/dependency_links.txt
+stock_trading.egg-info/requires.txt
+stock_trading.egg-info/top_level.txt
+stock_trading/models/__init__.py
+stock_trading/models/portfolio_model.py
+stock_trading/models/stock_model.py
