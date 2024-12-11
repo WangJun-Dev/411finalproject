@@ -2,20 +2,14 @@
 
 A Flask-based REST API that enables users to view stock information and manage a simulated stock portfolio. The application integrates with Alpha Vantage for real-time market data.
 
-# Docker Setup for Stock Trading API
-
-## Prerequisites
-- Docker
-- Docker Compose
-
 ## Running the Application
 
 1. Clone the repository:
-git clone <repository-url>
-cd stock-trading-api
 
 2. Build and run with Docker Compose:
-docker-compose up --build
+docker build -t stock-app .
+
+docker run -d -p 6000:6000 stock-app
 
 The API will be available at http://localhost:6000
 
