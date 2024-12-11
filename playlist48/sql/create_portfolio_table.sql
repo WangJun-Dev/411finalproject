@@ -14,3 +14,12 @@ CREATE TABLE portfolio (
     purchase_date TIMESTAMP,
     FOREIGN KEY (symbol) REFERENCES stocks(symbol)
 );
+DROP TABLE IF EXISTS users;
+CREATE TABLE users(
+    id INTEGER NOT NULL, 
+	username VARCHAR(50) NOT NULL, 
+	salt BLOB NOT NULL, 
+	hashed_password BLOB NOT NULL, 
+	PRIMARY KEY (id), 
+	UNIQUE (username)
+);

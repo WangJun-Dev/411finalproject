@@ -11,7 +11,7 @@ configure_logger(logger)
 
 
 # load the db path from the environment with a default value
-DB_PATH = os.getenv("DB_PATH", "/app/sql/stocks.db")
+DB_PATH = os.getenv("DB_PATH", "/app/db/stocks.db")
 
 
 def check_database_connection():
@@ -27,7 +27,7 @@ def check_database_connection():
         cursor.execute("SELECT 1;")
         conn.close()
     except sqlite3.Error as e:
-        error_message = f"Database connection error: {e}"
+        error_message = f"Database connection error: {DB_PATH}"
         logger.error(error_message)
         raise Exception(error_message) from e
 

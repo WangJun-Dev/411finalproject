@@ -26,7 +26,7 @@ class PortfolioModel:
 
         try:
         # Use the context manager to handle the database connection
-            with get_db_connection() as conn:
+            with sqlite3.connect('/app/db/stocks.db') as conn:
                 cursor = conn.cursor()
                 cursor.execute(
                 "INSERT INTO portfolio (symbol, shares, purchase_price, purchase_date) VALUES (?, ?, ?, ?)",

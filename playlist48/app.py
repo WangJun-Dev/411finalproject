@@ -3,15 +3,136 @@ from flask import Flask, jsonify, make_response, Response, request
 from music_collection.models.stock_model import StockModel
 from music_collection.models.portfolio_model import PortfolioModel
 from music_collection.utils.sql_utils import check_database_connection, check_table_exists
+from typing import Any, Dict, Tuple
+from venv import logger
+from flask import Flask, jsonify, make_response, request
 
+import os
+import requests
+from dotenv import load_dotenv
+
+from music_collection.models.user_model import UserModel
 
 # Load environment variables from .env file
 load_dotenv()
 
 app = Flask(__name__)
-
+user_model = UserModel()
 stock_model = StockModel()
 portfolio_model = PortfolioModel()
+@app.route('/api/create-account', methods=['POST'])
+def create_account():
+    """
+    Endpoint to create a new user account
+    Expected JSON payload:
+    {
+        "username": "string",
+        "password": "string"
+    }
+    """
+    try:
+        # Parse JSON data from the request
+        data = request.get_json()
+        
+        # Validate request data
+        if not data:
+            return jsonify({"error": "No input data provided"}), 400
+        
+        username = data.get('username')
+        password = data.get('password')
+        
+        # Validate username and password are present
+        if not username or not password:
+            return jsonify({"error": "Username and password are required"}), 400
+        
+        # Attempt to create account
+        result = user_model.create_account(username, password)
+        
+        return jsonify(result), 201
+    
+    except ValueError as ve:
+        # Handle validation errors (e.g., username exists, invalid password)
+        return jsonify({"error": str(ve)}), 400
+    except Exception as e:
+        # Handle unexpected errors
+        return jsonify({"error": "An unexpected error occurred"}), 500
+
+@app.route('/api/login', methods=['POST'])
+def login():
+    """
+    Endpoint to authenticate a user
+    Expected JSON payload:
+    {
+        "username": "string",
+        "password": "string"
+    }
+    """
+    try:
+        # Parse JSON data from the request
+        data = request.get_json()
+        
+        # Validate request data
+        if not data:
+            return jsonify({"error": "No input data provided"}), 400
+        
+        username = data.get('username')
+        password = data.get('password')
+        
+        # Validate username and password are present
+        if not username or not password:
+            return jsonify({"error": "Username and password are required"}), 400
+        
+        # Attempt to log in
+        result = user_model.login(username, password)
+        
+        return jsonify(result), 200
+    
+    except ValueError as ve:
+        # Handle login errors (e.g., invalid credentials)
+        return jsonify({"error": str(ve)}), 401
+    except Exception as e:
+        # Handle unexpected errors
+        return jsonify({"error": "An unexpected error occurred"}), 500
+
+@app.route('/api/update-password', methods=['POST'])
+def update_password():
+    """
+    Endpoint to update a user's password
+    Expected JSON payload:
+    {
+        "username": "string",
+        "old_password": "string",
+        "new_password": "string"
+    }
+    """
+    try:
+        # Parse JSON data from the request
+        data = request.get_json()
+        
+        # Validate request data
+        if not data:
+            return jsonify({"error": "No input data provided"}), 400
+        
+        username = data.get('username')
+        old_password = data.get('current_password')
+        new_password = data.get('new_password')
+        
+        # Validate all required fields are present
+        if not all([username, old_password, new_password]):
+            return jsonify({"error": f"{username, old_password, new_password}"}), 400
+        
+        # Attempt to update password
+        result = user_model.update_password(username, old_password, new_password)
+        
+        return jsonify(result), 200
+    
+    except ValueError as ve:
+        # Handle validation errors (e.g., incorrect current password)
+        return jsonify({"error": str(ve)}), 400
+    except Exception as e:
+        # Handle unexpected errors
+        return jsonify({"error": "An unexpected error occurred"}), 500
+
 
 ####################################################
 #
