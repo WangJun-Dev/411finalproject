@@ -2,6 +2,8 @@ import sqlite3
 from typing import Dict, List, Optional
 from datetime import datetime
 from .stock_model import StockModel
+from music_collection.utils.sql_utils import get_db_connection
+
 
 class PortfolioModel:
     def __init__(self):
@@ -13,14 +15,27 @@ class PortfolioModel:
         # Get current stock price
         stock_info = self.stock_model.get_stock_info(symbol)
         current_price = stock_info["price"]
-        
-        with sqlite3.connect(self.db_path) as conn:
-            cursor = conn.cursor()
-            cursor.execute(
+
+        try:
+        # Use the context manager to handle the database connection
+            with get_db_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(
                 "INSERT INTO portfolio (symbol, shares, purchase_price, purchase_date) VALUES (?, ?, ?, ?)",
                 (symbol, shares, current_price, datetime.now())
-            )
-            conn.commit()
+                )
+                conn.commit()
+        except sqlite3.Error as e:
+            raise sqlite3.Error(f"Database error: {str(e)}")
+
+        
+        # with sqlite3.connect(self.db_path) as conn:
+        #     cursor = conn.cursor()
+        #     cursor.execute(
+        #         "INSERT INTO portfolio (symbol, shares, purchase_price, purchase_date) VALUES (?, ?, ?, ?)",
+        #         (symbol, shares, current_price, datetime.now())
+        #     )
+        #     conn.commit()
             
         return {
             "symbol": symbol,
@@ -42,33 +57,36 @@ class PortfolioModel:
         
         # Remove shares from portfolio
         shares_to_remove = shares
-        with sqlite3.connect(self.db_path) as conn:
-            cursor = conn.cursor()
-            
-            # Get portfolio entries ordered by purchase date (FIFO)
-            cursor.execute(
-                "SELECT id, shares FROM portfolio WHERE symbol = ? ORDER BY purchase_date",
-                (symbol,)
-            )
-            entries = cursor.fetchall()
-            
-            for entry_id, entry_shares in entries:
-                if shares_to_remove <= 0:
-                    break
-                    
-                if entry_shares <= shares_to_remove:
-                    # Remove entire entry
-                    cursor.execute("DELETE FROM portfolio WHERE id = ?", (entry_id,))
-                    shares_to_remove -= entry_shares
-                else:
-                    # Update entry with remaining shares
-                    cursor.execute(
-                        "UPDATE portfolio SET shares = ? WHERE id = ?",
-                        (entry_shares - shares_to_remove, entry_id)
-                    )
-                    shares_to_remove = 0
-                    
-            conn.commit()
+        try:
+            with get_db_connection() as conn:
+                cursor = conn.cursor()
+                
+                # Get portfolio entries ordered by purchase date (FIFO)
+                cursor.execute(
+                    "SELECT id, shares FROM portfolio WHERE symbol = ? ORDER BY purchase_date",
+                    (symbol,)
+                )
+                entries = cursor.fetchall()
+                
+                for entry_id, entry_shares in entries:
+                    if shares_to_remove <= 0:
+                        break
+                        
+                    if entry_shares <= shares_to_remove:
+                        # Remove entire entry
+                        cursor.execute("DELETE FROM portfolio WHERE id = ?", (entry_id,))
+                        shares_to_remove -= entry_shares
+                    else:
+                        # Update entry with remaining shares
+                        cursor.execute(
+                            "UPDATE portfolio SET shares = ? WHERE id = ?",
+                            (entry_shares - shares_to_remove, entry_id)
+                        )
+                        shares_to_remove = 0
+                        
+                conn.commit()
+        except sqlite3.Error as e:
+            raise sqlite3.Error(f"Database error: {str(e)}")
             
         return {
             "symbol": symbol,
@@ -80,40 +98,43 @@ class PortfolioModel:
     def get_portfolio(self) -> List[Dict]:
         """Get current portfolio with latest stock prices."""
         portfolio = []
-        with sqlite3.connect(self.db_path) as conn:
-            cursor = conn.cursor()
-            
-            # Get unique symbols and total shares
-            cursor.execute("""
-                SELECT symbol, SUM(shares) as total_shares
-                FROM portfolio
-                GROUP BY symbol
-                HAVING total_shares > 0
-            """)
-            
-            holdings = cursor.fetchall()
-            
-            for symbol, shares in holdings:
-                # Get current stock price
-                stock_info = self.stock_model.get_stock_info(symbol)
-                current_price = stock_info["price"]
+        try:
+            with get_db_connection() as conn:
+                cursor = conn.cursor()
                 
-                # Calculate average purchase price
+                # Get unique symbols and total shares
                 cursor.execute("""
-                    SELECT AVG(purchase_price)
+                    SELECT symbol, SUM(shares) as total_shares
                     FROM portfolio
-                    WHERE symbol = ?
-                """, (symbol,))
-                avg_purchase_price = cursor.fetchone()[0]
+                    GROUP BY symbol
+                    HAVING total_shares > 0
+                """)
                 
-                portfolio.append({
-                    "symbol": symbol,
-                    "shares": shares,
-                    "current_price": current_price,
-                    "current_value": current_price * shares,
-                    "avg_purchase_price": avg_purchase_price,
-                    "total_gain_loss": (current_price - avg_purchase_price) * shares
-                })
+                holdings = cursor.fetchall()
+                
+                for symbol, shares in holdings:
+                    # Get current stock price
+                    stock_info = self.stock_model.get_stock_info(symbol)
+                    current_price = stock_info["price"]
+                    
+                    # Calculate average purchase price
+                    cursor.execute("""
+                        SELECT AVG(purchase_price)
+                        FROM portfolio
+                        WHERE symbol = ?
+                    """, (symbol,))
+                    avg_purchase_price = cursor.fetchone()[0]
+                    
+                    portfolio.append({
+                        "symbol": symbol,
+                        "shares": shares,
+                        "current_price": current_price,
+                        "current_value": current_price * shares,
+                        "avg_purchase_price": avg_purchase_price,
+                        "total_gain_loss": (current_price - avg_purchase_price) * shares
+                    })
+        except sqlite3.Error as e:
+            raise sqlite3.Error(f"Database error: {str(e)}")
                 
         return portfolio
 
@@ -134,11 +155,14 @@ class PortfolioModel:
 
     def _get_total_shares(self, symbol: str) -> int:
         """Get total shares owned of a particular stock."""
-        with sqlite3.connect(self.db_path) as conn:
-            cursor = conn.cursor()
-            cursor.execute(
-                "SELECT SUM(shares) FROM portfolio WHERE symbol = ?",
-                (symbol,)
-            )
-            result = cursor.fetchone()[0]
-            return result or 0
+        try:
+            with get_db_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    "SELECT SUM(shares) FROM portfolio WHERE symbol = ?",
+                    (symbol,)
+                )
+                result = cursor.fetchone()[0]
+        except sqlite3.Error as e:
+            raise sqlite3.Error(f"Database error: {str(e)}")
+        return result or 0
