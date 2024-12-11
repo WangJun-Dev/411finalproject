@@ -2,6 +2,43 @@
 
 A Flask-based REST API that enables users to view stock information and manage a simulated stock portfolio. The application integrates with Alpha Vantage for real-time market data.
 
+# Docker Setup for Stock Trading API
+
+## Prerequisites
+- Docker
+- Docker Compose
+
+## Running the Application
+
+1. Clone the repository:
+git clone <repository-url>
+cd stock-trading-api
+
+2. Build and run with Docker Compose:
+docker-compose up --build
+
+The API will be available at http://localhost:6000
+
+## Docker Management Commands
+
+Stop the application:
+docker-compose down
+
+View logs:
+docker-compose logs -f
+
+Rebuild after making changes:
+docker-compose up --build
+
+## Testing the Setup
+Verify the API is running:
+curl http://localhost:6000/api/health
+
+Expected response:
+{
+    "status": "healthy"
+}
+
 ## API Routes
 
 ### 1. Health Check
@@ -138,3 +175,4 @@ A Flask-based REST API that enables users to view stock information and manage a
     -H 'Content-Type: application/json' \
     -d '{"symbol": "AAPL", "shares": 5}'
   ```
+
