@@ -2,6 +2,8 @@ from dotenv import load_dotenv
 from flask import Flask, jsonify, make_response, Response, request
 from music_collection.models.stock_model import StockModel
 from music_collection.models.portfolio_model import PortfolioModel
+from music_collection.utils.sql_utils import check_database_connection, check_table_exists
+
 
 # Load environment variables from .env file
 load_dotenv()
@@ -27,6 +29,30 @@ def healthcheck() -> Response:
     """
     app.logger.info('Health check')
     return make_response(jsonify({'status': 'healthy'}), 200)
+
+@app.route('/api/db-check', methods=['GET'])
+def db_check() -> Response:
+    """
+    Route to check if the database connection and songs table are functional.
+
+    Returns:
+        JSON response indicating the database health status.
+    Raises:
+        404 error if there is an issue with the database.
+    """
+    try:
+        app.logger.info("Checking database connection...")
+        check_database_connection()
+        app.logger.info("Database connection is OK.")
+        app.logger.info("Checking if stocks table exists...")
+        check_table_exists("stocks")
+        app.logger.info("stocks table exists.")
+        app.logger.info("Checking if portfolio table exists...")
+        check_table_exists("portfolio")
+        app.logger.info("portfolio table exists.")
+        return make_response(jsonify({'database_status': 'healthy'}), 200)
+    except Exception as e:
+        return make_response(jsonify({'error': str(e)}), 404)
 
 ####################################################
 #

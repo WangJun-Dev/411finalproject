@@ -16,8 +16,17 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Install SQLite3
 RUN apt-get update && apt-get install -y sqlite3
 
-# Expose port 6000
-EXPOSE 6000
+# Add a shell script that loads the .env file and handles database creation
+COPY ./sql/create_db.sh /app/sql/create_db.sh
+COPY ./sql/create_portfolio_table.sql /app/sql/create_portfolio_table.sql
+RUN chmod +x /app/sql/create_db.sh
 
-# Command to run the application
-CMD ["python3", "app.py"]
+# Define a volume for persisting the database
+VOLUME ["/app/db"]
+
+# Make port 5000 available to the world outside this container
+EXPOSE 5000
+
+# Run the entrypoint script when the container launches
+RUN chmod +x /app/entrypoint.sh
+CMD ["/app/entrypoint.sh"]
