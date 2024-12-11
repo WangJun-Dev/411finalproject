@@ -2,6 +2,15 @@
 
 A Flask-based REST API that enables users to view stock information and manage a simulated stock portfolio. The application integrates with Alpha Vantage for real-time market data.
 
+## Running the Application
+Clone the repository:
+
+Build and run with Docker Compose: docker build -t stock-app .
+
+docker run -d -p 6000:6000 stock-app
+
+The API will be available at http://localhost:6000
+
 ## API Routes
 
 ### 1. Health Check
